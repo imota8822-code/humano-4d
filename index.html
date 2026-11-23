@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Humano 4D</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;padding:20px;font-family:system-ui,Arial;background:#0b1020;color:#eef4ff;max-width:850px;margin:auto}
+header{padding:18px;border-radius:14px;background:linear-gradient(135deg,#101b38,#202b55);text-align:center}
+h1{margin:4px 0;font-size:28px}p{line-height:1.5;color:#bdcbe2}
+canvas{display:block;width:100%;height:auto;background:#080e1e;border-radius:12px;margin:16px 0}
+.panel{padding:16px;border-radius:12px;background:#172039;margin:12px 0}
+input{width:100%;accent-color:#43c9ff}button{padding:10px 14px;border:0;border-radius:8px;background:#263653;color:white;font-size:15px}
+.buttons{display:flex;gap:8px}.buttons button{flex:1}#zero{background:#1684bd}
+.meta{display:flex;justify-content:space-between;gap:10px}.note{font-size:13px;color:#9eacc5}
+</style>
+</head>
+<body>
+<header><div>MODELO GEOMÉTRICO 4D</div><h1>HUMANO 4D</h1><div>Projeção tridimensional de cortes de um hiperelipsoide</div></header>
+<canvas id="scene" width="620" height="520"></canvas>
+<section class="panel">
+ <div class="meta"><label for="w">Quarta coordenada W</label><strong id="value">0.00</strong></div>
+ <input id="w" type="range" min="-1" max="1" step=".01" value="0">
+ <div class="meta note"><span>W = -1</span><span>W = 0</span><span>W = +1</span></div>
+ <div class="buttons" style="margin-top:14px">
+  <button id="minus">− 0.1</button><button id="zero">Centro</button><button id="plus">+ 0.1</button>
+ </div>
+</section>
+<section class="panel meta"><span>Dimensões: <b>4 espaciais</b></span><span id="state"><b>Centro do corpo</b></span></section>
+<p class="note">Modelo didático simplificado: cada parte é representada por um hiperelipsoide. O desenho mostra a secção 3D para o valor de W escolhido. Não representa anatomia humana real em quatro dimensões.</p>
+<script>
+const c=document.getElementById('scene'),ctx=c.getContext('2d'),slider=document.getElementById('w');
+const parts=[
+{ x:0,z:1.68,a:.22,b:.19,h:.25,d:1},{x:0,z:1.39,a:.09,b:.09,h:.12,d:1},
+{x:0,z:1.08,a:.29,b:.17,h:.34,d:1},{x:0,z:.72,a:.27,b:.17,h:.16,d:1},
+{x:-.38,z:1.08,a:.105,b:.10,h:.34,d:1},{x:.38,z:1.08,a:.105,b:.10,h:.34,d:1},
+{x:-.43,z:.68,a:.085,b:.085,h:.29,d:1},{x:.43,z:.68,a:.085,b:.085,h:.29,d:1},
+{x:-.14,z:.39,a:.13,b:.13,h:.27,d:1},{x:.14,z:.39,a:.13,b:.13,h:.27,d:1},
+{x:-.14,z:.12,a:.095,b:.10,h:.22,d:1},{x:.14,z:.12,a:.095,b:.10,h:.22,d:1}
+];
+function draw(){
+ const w=+slider.value;document.getElementById('value').textContent=w.toFixed(2);
+ document.getElementById('state').textContent=Math.abs(w)<.02?'Centro do corpo':w>0?'Corte positivo W':'Corte negativo W';
+ ctx.clearRect(0,0,620,520);ctx.strokeStyle='#263b60';ctx.lineWidth=1;
+ for(let x=20;x<620;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,520);ctx.stroke()}
+ for(let y=20;y<520;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(620,y);ctx.stroke()}
+ ctx.fillStyle='#8aa7d9';ctx.font='15px sans-serif';ctx.fillText('PROJEÇÃO 3D DO CORTE 4D',18,25);
+ let valid=0;
+ parts.forEach(p=>{let q=1-w*w/(p.d*p.d);if(q<=0)return;valid++;let s=Math.sqrt(q),a=p.a*s,b=p.b*s,h=p.h*s,cx=310+p.x*360,cy=420-p.z*230;
+ ctx.save();ctx.translate(cx,cy);ctx.strokeStyle='#43c9ff';ctx.lineWidth=1.6;
+ for(let lat=-2;lat<=2;lat++){let v=lat*Math.PI/7;ctx.beginPath();for(let j=0;j<=60;j++){let t=j*Math.PI*2/60,x=a*Math.cos(v)*Math.cos(t),y=b*Math.cos(v)*Math.sin(t),z=h*Math.sin(v),px=(x-y*.35)*230,py=-z*230+y*90;if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.closePath();ctx.stroke()}
+ for(let j=0;j<8;j++){let t=j*Math.PI/8;ctx.beginPath();for(let k=0;k<=40;k++){let v=-Math.PI/2+k*Math.PI/40,x=a*Math.cos(v)*Math.cos(t),y=b*Math.cos(v)*Math.sin(t),z=h*Math.sin(v),px=(x-y*.35)*230,py=-z*230+y*90;if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.stroke()}ctx.restore()});
+ ctx.fillStyle='#c6ddff';ctx.font='13px sans-serif';ctx.fillText('X: largura',18,485);ctx.fillText('Z: altura',18,503);ctx.fillText('Y: profundidade',460,485);
+ if(!valid){ctx.fillStyle='white';ctx.font='18px sans-serif';ctx.fillText('Sem secção neste valor de W',155,265)}
+}
+slider.addEventListener('input',draw);
+document.getElementById('minus').onclick=()=>{slider.value=Math.max(-1,+slider.value-.1).toFixed(2);draw()};
+document.getElementById('plus').onclick=()=>{slider.value=Math.min(1,+slider.value+.1).toFixed(2);draw()};
+document.getElementById('zero').onclick=()=>{slider.value=0;draw()};draw();
+</script>
+</body></html>
